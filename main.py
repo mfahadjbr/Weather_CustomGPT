@@ -9,7 +9,7 @@ st.set_page_config(page_title="Weather Information", page_icon="🌤️", layout
 st.markdown("""
     <style>
         .main-title { text-align: center; font-size: 2rem; font-weight: bold; }
-        .info-box { background-color: #f0f2f6; padding: 15px; border-radius: 10px; }
+        .info-box {padding: 15px; border-radius: 10px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -63,7 +63,7 @@ def get_weather(city: str) -> str:
         return {"error": f"An error occurred: {e}"}
 
 # User input
-user_input = st.text_input("Enter the city name:", placeholder="e.g., New York")
+user_input = st.text_input("Enter the country/city name:", placeholder="e.g., pakistan")
 
 # Fetch weather data on button click
 if st.button("Get Weather Info", use_container_width=True):
