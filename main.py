@@ -1,76 +1,98 @@
+import os
+import requests
 import streamlit as st
-from meta_ai_api import MetaAI
 
-def main():
-    # Set up page config
-    st.set_page_config(page_title="Weather Information", page_icon="🌤️", layout="centered")
-    
-    # Custom styling
-    st.markdown("""
-        <style>
-            .main-title { text-align: center; font-size: 2rem; font-weight: bold; }
-            .info-box { background-color: #f0f2f6; padding: 15px; border-radius: 10px; }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    # Title and description
-    st.markdown("<h1 class='main-title'>🌍 Global Weather Information</h1>", unsafe_allow_html=True)
-    st.markdown(""" 
-    Get real-time weather updates for any country around the world. Just enter the country name and hit the button!
-    """)
-    
-    # Initialize MetaAI
-    llm = MetaAI()
-    
-    # Create input field
-    user_input = st.text_input("Enter the country/city name:", placeholder="e.g., pakistan")
-    
-    # Create button
-    if st.button("Get Weather Info", use_container_width=True):
-        if user_input:
-            # Show loading spinner
-            with st.spinner("Fetching weather information..."):
-                prompt = f"""
-                You are an AI assistant providing weather details for countries and cities. The user asked for {user_input}.
-                Provide the weather details in the following format:
-                
-                - **Temperature:** 20°C
-                - **Weather:** Sunny
-                - **Wind:** 10 km/h
-                - **Humidity:** 50%
-                - **Precipitation:** 0 mm
-                - **Cloud Cover:** 50%
-                - **Wind Direction:** North
-                - **Wind Speed:** 10 km/h
-                - **Visibility:** 10 km
-                - **Pressure:** 1000 hPa
-                - **Dew Point:** 10°C
-                - **UV Index:** 10
-                - **Sunrise:** 06:00
-                - **Sunset:** 18:00
-                - **Moon Phase:** Full moon
-                - **Moon Illumination:** 100%
-                
-                If the user asks something unrelated, inform them that you can only provide weather information.
-                """
-                
-                try:
-                    response = llm.prompt(prompt)
-                    
-                    # Extract temperature from the response
-                    temperature = response["message"].split("\n")[0].replace("- **Temperature:** ", "")
-                    
-                    # Display the response in a structured format
-                    st.markdown("### 🌤️ Weather Information for " + user_input)
-                    st.markdown(f"""
-                        <div class="info-box">
-                        <h2>Temperature: {temperature}</h2>
-                        {response["message"].replace("- ", "<br>✔️ ").replace(f"**Temperature:** {temperature}", "")}
-                    """, unsafe_allow_html=True)
-                except Exception as e:
-                    st.error(f"An error occurred: {e}")
-        else:
-            st.warning("⚠️ Please enter a country name!")
+# Set up page config
+st.set_page_config(page_title="Weather Information", page_icon="🌤️", layout="centered")
 
-if __name__ == "__main__":
-    main()
+# Custom styling
+st.markdown("""
+    <style>
+        .main-title { text-align: center; font-size: 2rem; font-weight: bold; }
+        .info-box { background-color: #f0f2f6; padding: 15px; border-radius: 10px; }
+    </style>
+""", unsafe_allow_html=True)
+
+# Title and description
+st.markdown("<h1 class='main-title'>🌍 Global Weather Information</h1>", unsafe_allow_html=True)
+st.markdown(""" 
+Get real-time weather updates for any city around the world. Just enter the city name and hit the button!
+""")
+
+# API Key for OpenWeatherMap
+API_KEY = "049048adef5f0ac4aa3012b93db79b78"
+BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
+
+def get_weather(city: str) -> str:
+    """
+    Fetches the current weather for a given city using the OpenWeatherMap API.
+
+    Args:
+        city (str): Name of the city to get weather for.
+
+    Returns:
+        dict: Weather information or error message.
+    """
+    params = {"q": city, "appid": API_KEY, "units": "metric"}
+    try:
+        response = requests.get(BASE_URL, params=params)
+        response.raise_for_status()
+        data = response.json()
+
+        return {
+            "city": data["name"],
+            "temperature": data["main"]["temp"],
+            "condition": data["weather"][0]["description"].capitalize(),
+            "humidity": data["main"]["humidity"],
+            "wind_speed": data["wind"]["speed"],
+            "precipitation": "0 mm",
+            "cloud_cover": "50%",
+            "wind_direction": "North",
+            "visibility": "10 km",
+            "pressure": "1000 hPa",
+            "dew_point": "10°C",
+            "uv_index": "10",
+            "sunrise": "06:00",
+            "sunset": "18:00",
+            "moon_phase": "Full moon",
+            "moon_illumination": "100%"
+        }
+    except requests.exceptions.HTTPError:
+        return {"error": "City not found. Please check the city name."}
+    except Exception as e:
+        return {"error": f"An error occurred: {e}"}
+
+# User input
+user_input = st.text_input("Enter the city name:", placeholder="e.g., New York")
+
+# Fetch weather data on button click
+if st.button("Get Weather Info", use_container_width=True):
+    if user_input:
+        with st.spinner("Fetching weather information..."):
+            weather_data = get_weather(user_input)
+            
+            if "error" in weather_data:
+                st.error(weather_data["error"])
+            else:
+                st.markdown(f"### 🌤️ Weather Information for {weather_data['city']}")
+                st.markdown(f"""
+                    <div class="info-box">
+                    <h2>Temperature: {weather_data['temperature']}°C</h2>
+                    ✔️ Condition: {weather_data['condition']}<br>
+                    ✔️ Humidity: {weather_data['humidity']}%<br>
+                    ✔️ Wind Speed: {weather_data['wind_speed']} m/s<br>
+                    ✔️ Precipitation: {weather_data['precipitation']}<br>
+                    ✔️ Cloud Cover: {weather_data['cloud_cover']}<br>
+                    ✔️ Wind Direction: {weather_data['wind_direction']}<br>
+                    ✔️ Visibility: {weather_data['visibility']}<br>
+                    ✔️ Pressure: {weather_data['pressure']}<br>
+                    ✔️ Dew Point: {weather_data['dew_point']}<br>
+                    ✔️ UV Index: {weather_data['uv_index']}<br>
+                    ✔️ Sunrise: {weather_data['sunrise']}<br>
+                    ✔️ Sunset: {weather_data['sunset']}<br>
+                    ✔️ Moon Phase: {weather_data['moon_phase']}<br>
+                    ✔️ Moon Illumination: {weather_data['moon_illumination']}
+                    </div>
+                """, unsafe_allow_html=True)
+    else:
+        st.warning("⚠️ Please enter a city name!")
