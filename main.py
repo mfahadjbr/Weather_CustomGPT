@@ -23,7 +23,7 @@ def main():
     llm = MetaAI()
     
     # Create input field
-    user_input = st.text_input("Enter the country name:", placeholder="e.g., pakistan")
+    user_input = st.text_input("Enter the country/city name:", placeholder="e.g., pakistan")
     
     # Create button
     if st.button("Get Weather Info", use_container_width=True):
@@ -54,18 +54,21 @@ def main():
                 If the user asks something unrelated, inform them that you can only provide weather information.
                 """
                 
-                response = llm.prompt(prompt)
-                
-                # Extract temperature from the response
-                temperature = response["message"].split("\n")[0].replace("- **Temperature:** ", "")
-                
-                # Display the response in a structured format
-                st.markdown("### 🌤️ Weather Information for " + user_input)
-                st.markdown(f"""
-                    <div class='info-box'>
-                    <h2>Temperature: {temperature}</h2>
-                    {response["message"].replace("- ", "<br>✔️ ").replace(f"**Temperature:** {temperature}", "")}
-                """, unsafe_allow_html=True)
+                try:
+                    response = llm.prompt(prompt)
+                    
+                    # Extract temperature from the response
+                    temperature = response["message"].split("\n")[0].replace("- **Temperature:** ", "")
+                    
+                    # Display the response in a structured format
+                    st.markdown("### 🌤️ Weather Information for " + user_input)
+                    st.markdown(f"""
+                        <div class="info-box">
+                        <h2>Temperature: {temperature}</h2>
+                        {response["message"].replace("- ", "<br>✔️ ").replace(f"**Temperature:** {temperature}", "")}
+                    """, unsafe_allow_html=True)
+                except Exception as e:
+                    st.error(f"An error occurred: {e}")
         else:
             st.warning("⚠️ Please enter a country name!")
 
